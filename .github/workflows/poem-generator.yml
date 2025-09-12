@@ -29,15 +29,14 @@ jobs:
           echo "timestamp=$(date +'%Y%m%d_%H%M%S')" >> $GITHUB_OUTPUT
 
       - name: Generate poem with Claude
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@v1
         with:
-          # Use 'agent' mode for scheduled/automated tasks that don't need a trigger.
-          mode: agent
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          # Explicitly grant Claude the tools to write a file and use git commands.
-          allowed_tools: "Write,Bash(git add:*),Bash(git commit:*),Bash(git push),Bash(git pull),Bash(git config:*)"
-          # Use 'override_prompt' for direct, automated instructions.
-          override_prompt: |
+          prompt: |
+            REPO: ${{ github.repository }}
+            TIMESTAMP: ${{ steps.seed.outputs.timestamp }}
+            SEED: ${{ steps.seed.outputs.seed }}
+
             You are a creative poet bot. Your task is to generate a unique poem and commit it to this repository.
 
             First, configure git with the bot's identity:
@@ -76,3 +75,5 @@ jobs:
             4. Push the commit using `git push`.
 
             Execute these steps precisely.
+          claude_args: |
+            --allowedTools Write,Bash(git add:*),Bash(git commit:*),Bash(git push),Bash(git pull),Bash(git config:*)

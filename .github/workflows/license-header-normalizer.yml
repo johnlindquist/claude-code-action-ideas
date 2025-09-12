@@ -36,22 +36,17 @@ jobs:
           fetch-depth: 0
 
       - name: Detect and normalize headers
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@v1
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          mode: agent
-          allowed_tools: |
-            Write,
-            Bash(rg:*),
-            Bash(git config:*),
-            Bash(git checkout -b:*),
-            Bash(git add:*),
-            Bash(git commit:*),
-            Bash(git push:*),
-            Bash(gh pr create:*)
-          override_prompt: |
+          prompt: |
+            REPO: ${{ github.repository }}
+            HEADER TEXT: ${{ inputs.header_text }}
+            FILE GLOB: ${{ inputs.file_glob }}
+            CREATE BRANCH: ${{ inputs.create_branch }}
+
             You are a license/header normalizer.
 
             Task:
@@ -61,6 +56,8 @@ jobs:
 
             Safety:
             - Avoid churn on large files; keep changes minimal.
+          claude_args: |
+            --allowedTools Write,Bash(rg:*),Bash(git config:*),Bash(git checkout -b:*),Bash(git add:*),Bash(git commit:*),Bash(git push:*),Bash(gh pr create:*)
 
       - name: Upload reports artifact
         if: ${{ hashFiles('reports/**') != '' }}

@@ -7,7 +7,7 @@ name: Claude - Executable Docs Doctor
 # CUSTOMIZATION
 # - Point docs_glob to specific sections of your docs.
 # - Tighten rules to only operate on certain languages (bash, ts, py) via prompt edits.
-# - If you want actual execution, explicitly extend allowed_tools to run commands (not recommended by default).
+# - If you want actual execution, explicitly extend --allowedTools to run commands (not recommended by default).
 
 on:
   workflow_dispatch:
@@ -28,15 +28,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Extract code blocks and verify outputs (safe mode)
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          mode: agent
-          allowed_tools: |
-            Write,
-            Bash(mkdir -p docs/_generated),
-            Bash(mkdir -p reports)
-          override_prompt: |
+          prompt: |
+            REPO: ${{ github.repository }}
+            DOCS GLOB: ${{ inputs.docs_glob }}
+
             You are a docs correctness assistant.
 
             Task:
@@ -47,6 +45,8 @@ jobs:
 
             Safety:
             - Do NOT run networked commands. Only generate outputs by reasoning, marking any assumptions.
+          claude_args: |
+            --allowedTools Write,Bash(mkdir -p docs/_generated),Bash(mkdir -p reports)
 
       - name: Upload reports artifact
         if: ${{ hashFiles('reports/**') != '' }}

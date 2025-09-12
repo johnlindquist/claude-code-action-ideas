@@ -27,18 +27,15 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Synthesize fixtures and failing test scaffold
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@v1
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          mode: agent
-          allowed_tools: |
-            Write,
-            Bash(gh issue view:*),
-            Bash(mkdir -p fixtures),
-            Bash(mkdir -p tests/failing)
-          override_prompt: |
+          prompt: |
+            REPO: ${{ github.repository }}
+            ISSUE NUMBER: ${{ inputs.issue_number }}
+
             You are a bug-to-dataset assistant.
 
             Task:
@@ -48,6 +45,8 @@ jobs:
 
             Safety:
             - Only add files under fixtures/ and tests/failing/.
+          claude_args: |
+            --allowedTools Write,Bash(gh issue view:*),Bash(mkdir -p fixtures),Bash(mkdir -p tests/failing)
 
       - name: Upload reports artifact
         if: ${{ hashFiles('reports/**') != '' }}

@@ -29,18 +29,15 @@ jobs:
           fetch-depth: 0
 
       - name: Analyze perf risks and propose benchmarks
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@v1
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          mode: agent
-          allowed_tools: |
-            Write,
-            Bash(gh pr diff:*),
-            Bash(mkdir -p benchmarks),
-            Bash(mkdir -p reports)
-          override_prompt: |
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ inputs.pr_number }}
+
             You are a performance reviewer.
 
             Task:
@@ -50,6 +47,8 @@ jobs:
 
             Safety:
             - Only add files under benchmarks/ and reports/. Do not change existing code.
+          claude_args: |
+            --allowedTools Write,Bash(gh pr diff:*),Bash(mkdir -p benchmarks),Bash(mkdir -p reports)
 
       - name: Upload reports artifact
         if: ${{ hashFiles('reports/**') != '' }}

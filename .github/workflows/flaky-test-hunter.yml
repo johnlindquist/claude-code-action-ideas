@@ -35,17 +35,15 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Prove flakiness and quarantine
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          mode: agent
-          allowed_tools: |
-            Write,
-            Bash(mkdir -p reports),
-            Bash(echo:*),
-            Bash(sh -c:*),
-            Bash(bash -lc:*)
-          override_prompt: |
+          prompt: |
+            REPO: ${{ github.repository }}
+            TEST COMMAND: ${{ inputs.test_command }}
+            RERUNS: ${{ inputs.reruns }}
+            QUARANTINE LABEL: ${{ inputs.quarantine_label }}
+
             You are a reliability assistant.
 
             Task:
@@ -55,6 +53,8 @@ jobs:
 
             Safety:
             - Do not modify source code. Only write under reports/.
+          claude_args: |
+            --allowedTools Write,Bash(mkdir -p reports),Bash(echo:*),Bash(sh -c:*),Bash(bash -lc:*)
 
       - name: Upload reports artifact
         if: ${{ hashFiles('reports/**') != '' }}

@@ -28,17 +28,15 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Propose milestone/label updates and weekly digest
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@v1
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          mode: agent
-          allowed_tools: |
-            Write,
-            Bash(gh api:*),
-            Bash(mkdir -p reports)
-          override_prompt: |
+          prompt: |
+            REPO: ${{ github.repository }}
+            MILESTONE TITLE: ${{ inputs.milestone_title }}
+
             You are a roadmap synchronizer.
 
             Task:
@@ -48,6 +46,8 @@ jobs:
 
             Safety:
             - Do not mutate state. Only write the report (no changes pushed).
+          claude_args: |
+            --allowedTools Write,Bash(gh api:*),Bash(mkdir -p reports)
 
       - name: Upload reports artifact
         if: ${{ hashFiles('reports/**') != '' }}

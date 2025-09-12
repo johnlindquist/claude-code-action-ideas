@@ -7,7 +7,7 @@ name: Claude - Cross-Platform Repro Bot (Playwright/Electron)
 # CUSTOMIZATION
 # - Adapt the scenario_desc to be more specific (URLs, user flows, data).
 # - Swap Playwright for your UI framework/tool if needed by editing the prompt.
-# - Expand allowed_tools if you want to auto-install deps (not recommended by default).
+# - Expand --allowedTools if you want to auto-install deps (not recommended by default).
 
 on:
   workflow_dispatch:
@@ -27,15 +27,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Generate cross-platform repro scaffold
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          mode: agent
-          allowed_tools: |
-            Write,
-            Bash(mkdir -p repro/playwright),
-            Bash(mkdir -p reports)
-          override_prompt: |
+          prompt: |
+            REPO: ${{ github.repository }}
+            SCENARIO DESCRIPTION: ${{ inputs.scenario_desc }}
+
             You are a cross-platform repro assistant.
 
             Task:
@@ -46,6 +44,8 @@ jobs:
 
             Safety:
             - Only write in repro/playwright/ and reports/.
+          claude_args: |
+            --allowedTools Write,Bash(mkdir -p repro/playwright),Bash(mkdir -p reports)
 
       - name: Upload reports artifact
         if: ${{ hashFiles('reports/**') != '' }}

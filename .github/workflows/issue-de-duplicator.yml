@@ -31,18 +31,16 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Suggest likely duplicates and workarounds
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@v1
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          mode: agent
-          allowed_tools: |
-            Write,
-            Bash(gh issue view:*),
-            Bash(gh issue list:*),
-            Bash(gh issue comment:*)
-          override_prompt: |
+          prompt: |
+            REPO: ${{ github.repository }}
+            ISSUE NUMBER: ${{ inputs.issue_number }}
+            POST COMMENT: ${{ inputs.post_comment }}
+
             You are an issue triager.
 
             Task:
@@ -52,6 +50,8 @@ jobs:
 
             Safety:
             - Read-only otherwise. Only write the report and optional comment.
+          claude_args: |
+            --allowedTools Write,Bash(gh issue view:*),Bash(gh issue list:*),Bash(gh issue comment:*)
 
       - name: Upload reports artifact
         if: ${{ hashFiles('reports/**') != '' }}

@@ -32,17 +32,16 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Welcome and guide the contributor
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@v1
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          mode: agent
-          allowed_tools: |
-            Write,
-            Bash(gh pr view:*),
-            Bash(gh pr comment:*)
-          override_prompt: |
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ inputs.pr_number }}
+            POST COMMENT: ${{ inputs.post_comment }}
+
             You are a contributor concierge.
 
             Task:
@@ -52,6 +51,8 @@ jobs:
 
             Safety:
             - Do not modify code. Only post a comment when requested.
+          claude_args: |
+            --allowedTools Write,Bash(gh pr view:*),Bash(gh pr comment:*)
 
       - name: Upload reports artifact
         if: ${{ hashFiles('reports/**') != '' }}

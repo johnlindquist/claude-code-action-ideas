@@ -30,16 +30,13 @@ jobs:
           fetch-depth: 0
 
       - name: Generate affected-packages script and audit
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          mode: agent
-          allowed_tools: |
-            Write,
-            Bash(git diff:*),
-            Bash(mkdir -p scripts),
-            Bash(mkdir -p reports)
-          override_prompt: |
+          prompt: |
+            REPO: ${{ github.repository }}
+            BASE REF: ${{ inputs.base_ref }}
+
             You are a monorepo CI optimizer.
 
             Task:
@@ -49,6 +46,8 @@ jobs:
 
             Safety:
             - Only add files under scripts/ and reports/.
+          claude_args: |
+            --allowedTools Write,Bash(git diff:*),Bash(mkdir -p scripts),Bash(mkdir -p reports)
 
       - name: Upload reports artifact
         if: ${{ hashFiles('reports/**') != '' }}

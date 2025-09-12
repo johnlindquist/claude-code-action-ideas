@@ -30,21 +30,15 @@ jobs:
           fetch-depth: 0
 
       - name: Draft rollback plan and PR skeleton
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@v1
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          mode: agent
-          allowed_tools: |
-            Write,
-            Bash(git checkout -b:*),
-            Bash(git add:*),
-            Bash(git commit:*),
-            Bash(git push:*),
-            Bash(gh pr create:*),
-            Bash(mkdir -p reports)
-          override_prompt: |
+          prompt: |
+            REPO: ${{ github.repository }}
+            SERVICE NAME: ${{ inputs.service_name }}
+
             You are a canary rollback assistant.
 
             Task:
@@ -54,6 +48,8 @@ jobs:
 
             Safety:
             - Only add documentation. Do not change code or config.
+          claude_args: |
+            --allowedTools Write,Bash(git checkout -b:*),Bash(git add:*),Bash(git commit:*),Bash(git push:*),Bash(gh pr create:*),Bash(mkdir -p reports)
 
       - name: Upload reports artifact
         if: ${{ hashFiles('reports/**') != '' }}

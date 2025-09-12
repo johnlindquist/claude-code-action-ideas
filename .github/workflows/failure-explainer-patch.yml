@@ -5,8 +5,8 @@ name: Claude - Failure Explainer → Patch PR
 # - Manual only; you review the PR like any other change.
 #
 # CUSTOMIZATION
-# - Tweak allowed_tools to forbid code edits if you only want analysis.
-# - Adjust override_prompt to set maximum diff size or file types allowed.
+# - Tweak --allowedTools to forbid code edits if you only want analysis.
+# - Adjust the prompt to set maximum diff size or file types allowed.
 # - Set open_pr default to false if you want to inspect changes first.
 
 on:
@@ -37,22 +37,17 @@ jobs:
           fetch-depth: 0
 
       - name: Analyze logs and propose fix
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@v1
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          mode: agent
-          allowed_tools: |
-            Write,
-            Bash(git config:*),
-            Bash(git checkout -b:*),
-            Bash(git add:*),
-            Bash(git commit:*),
-            Bash(git push:*),
-            Bash(gh pr create:*),
-            Bash(mkdir -p reports)
-          override_prompt: |
+          prompt: |
+            REPO: ${{ github.repository }}
+            LOG PATH: ${{ inputs.log_path }}
+            BRANCH NAME: ${{ inputs.branch_name }}
+            OPEN PR: ${{ inputs.open_pr }}
+
             You are a failure analysis assistant.
 
             Task:
@@ -67,6 +62,8 @@ jobs:
 
             Safety:
             - Keep changes minimal. If unsure, add a TODO and prefer a smaller patch.
+          claude_args: |
+            --allowedTools Write,Bash(git config:*),Bash(git checkout -b:*),Bash(git add:*),Bash(git commit:*),Bash(git push:*),Bash(gh pr create:*),Bash(mkdir -p reports)
 
       - name: Upload reports artifact
         if: ${{ hashFiles('reports/**') != '' }}

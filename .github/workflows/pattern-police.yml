@@ -6,8 +6,8 @@ name: Claude - Pattern Police
 #
 # CUSTOMIZATION
 # - Edit rules_path default to your own pattern index.
-# - Extend override_prompt with examples of forbidden imports or dependency directions.
-# - Limit or expand allowed_tools as needed (e.g., remove ripgrep).
+# - Extend the prompt with examples of forbidden imports or dependency directions.
+# - Limit or expand --allowedTools as needed (e.g., remove ripgrep).
 #
 # SAFETY
 # - Read-only other than a report file. No code changes.
@@ -37,19 +37,16 @@ jobs:
           fetch-depth: 0
 
       - name: Detect architecture drift
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@v1
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          mode: agent
-          allowed_tools: |
-            Write,
-            Bash(gh pr diff:*),
-            Bash(mkdir -p reports),
-            Bash(rg:*),
-            Bash(grep:*)
-          override_prompt: |
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ inputs.pr_number }}
+            RULES FILE: ${{ inputs.rules_path }}
+
             You are an architecture pattern checker.
 
             Inputs:
@@ -67,6 +64,8 @@ jobs:
 
             Safety:
             - Do not modify any source files. Only write the report under reports/.
+          claude_args: |
+            --allowedTools Write,Bash(gh pr diff:*),Bash(mkdir -p reports),Bash(rg:*),Bash(grep:*)
 
       - name: Upload reports artifact
         if: ${{ hashFiles('reports/**') != '' }}

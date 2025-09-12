@@ -30,15 +30,14 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Generate Gherkin scenarios and test stubs
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          mode: agent
-          allowed_tools: |
-            Write,
-            Bash(mkdir -p tests/plans),
-            Bash(mkdir -p tests/stubs)
-          override_prompt: |
+          prompt: |
+            REPO: ${{ github.repository }}
+            SPEC PATH: ${{ inputs.spec_path }}
+            CREATE STUBS: ${{ inputs.create_stubs }}
+
             You are a test planner.
 
             Task:
@@ -48,6 +47,8 @@ jobs:
 
             Safety:
             - Only add files under tests/plans and tests/stubs.
+          claude_args: |
+            --allowedTools Write,Bash(mkdir -p tests/plans),Bash(mkdir -p tests/stubs)
 
       - name: Upload reports artifact
         if: ${{ hashFiles('reports/**') != '' }}

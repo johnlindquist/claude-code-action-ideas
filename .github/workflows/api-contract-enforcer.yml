@@ -7,7 +7,7 @@ name: Claude - API Contract Enforcer
 # CUSTOMIZATION
 # - Point contract_path to openapi.yaml or proto/ directory.
 # - Set generate_tests to false to skip scaffolds.
-# - Tighten allowed_tools to read-only if you do not want tests written.
+# - Tighten --allowedTools to read-only if you do not want tests written.
 
 on:
   workflow_dispatch:
@@ -37,15 +37,14 @@ jobs:
           fetch-depth: 0
 
       - name: Contract change analysis and test scaffolding
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          mode: agent
-          allowed_tools: |
-            Write,
-            Bash(git diff:*),
-            Bash(mkdir -p tests/generated)
-          override_prompt: |
+          prompt: |
+            REPO: ${{ github.repository }}
+            BASE BRANCH: ${{ inputs.base_branch }}
+            CONTRACT PATH: ${{ inputs.contract_path }}
+
             You are an API contract enforcer.
 
             Task:
@@ -56,6 +55,8 @@ jobs:
 
             Safety:
             - Only add files under tests/generated/ and reports/. Do not modify existing code.
+          claude_args: |
+            --allowedTools Write,Bash(git diff:*),Bash(mkdir -p tests/generated)
 
       - name: Upload reports artifact
         if: ${{ hashFiles('reports/**') != '' }}

@@ -6,8 +6,8 @@ name: Claude - Design Doc Gatekeeper
 #
 # HOW TO CUSTOMIZE
 # - Change inputs.rfc_glob to target your RFC folder structure.
-# - Add/remove sections in the template list within override_prompt.
-# - Tighten allowed_tools if you do not want any GitHub comments (remove gh issue comment).
+# - Add/remove sections in the template list within the prompt.
+# - Tighten --allowedTools if you do not want any GitHub comments (remove gh issue comment).
 # - Set post_comment default to "true" if you want comments by default.
 #
 # SECRETS & PERMISSIONS
@@ -41,18 +41,17 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Analyze RFCs against template
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@v1
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          mode: agent
-          allowed_tools: |
-            Write,
-            Bash(ls -la:*),
-            Bash(mkdir -p reports),
-            Bash(gh issue comment:*)
-          override_prompt: |
+          prompt: |
+            REPO: ${{ github.repository }}
+            RFC GLOB: ${{ inputs.rfc_glob }}
+            ISSUE NUMBER: ${{ inputs.issue_number }}
+            POST COMMENT: ${{ inputs.post_comment }}
+
             You are a design-doc reviewer.
 
             Task:
@@ -67,6 +66,8 @@ jobs:
             - Only write to reports/design-doc-review.md.
             - If an issue number was provided AND ${{ inputs.post_comment }} == "true", add an issue comment noting the report is attached as artifact 'claude-reports' (reports/design-doc-review.md):
               `gh issue comment ${{ inputs.issue_number }} --body "📄 Design doc review is attached as artifact 'claude-reports' (reports/design-doc-review.md)"`.
+          claude_args: |
+            --allowedTools Write,Bash(ls -la:*),Bash(mkdir -p reports),Bash(gh issue comment:*)
 
       - name: Upload reports artifact
         if: ${{ hashFiles('reports/**') != '' }}

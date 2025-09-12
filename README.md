@@ -25,38 +25,17 @@ If you want an automation to run on PRs or pushes, change the `on:` block after 
 - 🧩 Common Issues
 - ❓ FAQ
 
-## ⚠️ Beta Notice and v1 Migration
+## ⚙️ v1 Defaults and Migration Notes
 
-These examples target `anthropics/claude-code-action@beta`. The official docs indicate v1 will introduce some breaking changes. Use these now with beta, and when v1 lands, plan a light migration per the checklist below.
+All workflows in this catalog now pin to `anthropics/claude-code-action@v1`. The v1 release introduces automatic mode detection, a single `prompt` input for automation flows, and `claude_args` for CLI-style configuration flags. If you are upgrading older `@beta` workflows, follow this quick checklist:
 
-What we use today (beta-safe patterns)
-- Action: `uses: anthropics/claude-code-action@beta`
-- Invocation: `mode: agent` with `override_prompt` for deterministic, manual-only flows
-- Auth: `claude_code_oauth_token` repository secret
-- Safety: tight `allowed_tools` with explicit `Bash(<command pattern>)`, plus conservative permissions
+1. Update `uses` to `anthropics/claude-code-action@v1` (no `mode` input required).
+2. Move any `direct_prompt`/`override_prompt` content into the `prompt` field and prepend GitHub context such as `REPO:` and `PR NUMBER:` when reviewing pull requests.
+3. Convert deprecated inputs to CLI switches inside `claude_args` (for example: `--allowedTools`, `--model`, `--max-turns`, `--system-prompt`, `--mcp-config`).
+4. Migrate `claude_env` to the `settings` JSON object when you need environment variables, and push timeout configuration up to the job-level `timeout-minutes` setting.
+5. Reconfirm secrets/permissions are still scoped tightly; these examples continue to rely on the `CLAUDE_CODE_OAUTH_TOKEN` repository secret.
 
-Expected changes in v1 (from the docs)
-- Deprecated inputs removed or consolidated (e.g., `direct_prompt`, `custom_instructions`)
-- Model selection may standardize; legacy fields (like some older model inputs) may be renamed or removed
-- Inputs surface refined, but core concepts remain (override prompt, allowed/disallowed tools, additional permissions)
-
-Migration checklist (when v1 is available)
-1) Pin the action to v1
-   - Change `uses: anthropics/claude-code-action@beta` → `uses: anthropics/claude-code-action@v1`
-2) Replace deprecated inputs if present
-   - If you use `direct_prompt` or `custom_instructions`, migrate to `override_prompt` or the v1‑recommended field
-   - These examples already use `override_prompt`, so most will be no‑change here
-3) Revalidate auth inputs
-   - Continue using `claude_code_oauth_token`, or switch to `anthropic_api_key` depending on your setup
-4) Recheck tooling gates
-   - Keep `allowed_tools` specific (e.g., `Bash(git add:*), Write`) and re‑confirm any new v1 tool names
-5) Confirm permissions
-   - Ensure minimal permissions still cover comments/PRs where enabled (e.g., `pull-requests: write`, `issues: write`)
-6) Optional: choose a specific model
-   - If you set `model`, verify the v1 model IDs in the docs and update accordingly
-
-Reference
-- See `docs/claude-code-action.md` in this repo for the bundled official documentation sections “beta” and “BREAKING CHANGES COMING IN v1.0”.
+For deeper guidance, see `docs/claude-code-action.md` and the upstream migration guide from Anthropic.
 
 
 This directory contains 30 copy/pasteable GitHub Actions that integrate Claude Code to automate useful maintenance and collaboration tasks. Every workflow here is:

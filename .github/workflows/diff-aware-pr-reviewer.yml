@@ -5,7 +5,7 @@ name: Claude - Diff-Aware PR Reviewer
 # - Trigger: Manual only (workflow_dispatch). Nothing here runs automatically.
 # - Outputs: reports/pr-<PR>-review.md and optional PR comment linking to it.
 # - Copy/Paste Ready: You can drop this file into other repos and adjust:
-#   - inputs, allowed_tools, permissions, and override_prompt for your stack.
+#   - inputs, prompt, claude_args, and permissions for your stack.
 #
 # REQUIRED SECRETS
 # - CLAUDE_CODE_OAUTH_TOKEN: A long-lived Claude Code OAuth token (see docs/claude-code-action.md).
@@ -16,8 +16,8 @@ name: Claude - Diff-Aware PR Reviewer
 # - actions: read lets Claude read CI results on PRs if you include that in additional_permissions.
 #
 # CUSTOMIZATION TIPS
-# - Adjust allowed_tools to restrict/enable commands. Keep the scope tight. Remove gh comment tool if you don't want comments.
-# - Update override_prompt sections (checks, formatting, tone) to match your review style.
+# - Adjust --allowedTools to restrict/enable commands. Keep the scope tight. Remove gh comment tool if you don't want comments.
+# - Update the prompt sections (checks, formatting, tone) to match your review style.
 # - If you want sticky comments, change logic to maintain a single comment (see docs).
 # - If you prefer different output paths, change reports/ to your desired directory.
 #
@@ -53,20 +53,16 @@ jobs:
           fetch-depth: 0
 
       - name: Diff-aware PR Review with Plan
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@v1
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          mode: agent
-          # Limit tools: read diff, write report, optional PR comment via gh
-          allowed_tools: |
-            Write,
-            Bash(gh pr view:*),
-            Bash(gh pr diff:*),
-            Bash(gh pr comment:*),
-            Bash(mkdir -p reports)
-          override_prompt: |
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ inputs.pr_number }}
+            POST COMMENT: ${{ inputs.post_comment }}
+
             You are a careful PR reviewer.
 
             Goal:
@@ -84,6 +80,8 @@ jobs:
             - Do NOT modify repository files beyond writing the single report file in reports/.
             - If ${{ inputs.post_comment }} is "true", also post a PR comment: "📄 Review report generated and attached as workflow artifact 'claude-reports' (reports/pr-${{ inputs.pr_number }}-review.md)." Use: `gh pr comment ${{ inputs.pr_number }} --body "📄 Review report is attached as artifact 'claude-reports' (reports/pr-${{ inputs.pr_number }}-review.md)"`.
             - Keep suggestions minimal and safe; do not assume project-specific build steps.
+          claude_args: |
+            --allowedTools Write,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(mkdir -p reports)
 
       - name: Upload reports artifact
         if: ${{ hashFiles('reports/**') != '' }}
